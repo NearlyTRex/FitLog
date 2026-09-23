@@ -1,0 +1,12 @@
+name: "Wii Fit Plus: Aerobics"
+type: cardio
+prescription: 20-30 minutes
+minutes: 25
+muscles: [legs, heart]
+equipment: [Wii, Balance Board]
+steps:
+  - Start Wii Fit Plus (or Wii Fit) and step on the Balance Board to load your profile.
+  - Open Aerobics.
+  - Rotate through the longer activities such as Hula Hoop, Step, and Jogging.
+  - Keep moving between activities with only short breaks.
+  - Stop at 20-30 minutes of total activity.

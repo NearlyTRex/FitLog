@@ -1,0 +1,12 @@
+name: My Fitness Coach Workout
+type: strength
+prescription: 20-30 minutes
+minutes: 25
+muscles: [full body]
+equipment: [Wii, dumbbells (optional)]
+steps:
+  - Start My Fitness Coach or My Fitness Coach 2.
+  - Load your profile and set the workout length to 20-30 minutes.
+  - Tell it which equipment you have, such as dumbbells, so it can include them.
+  - Follow the coach through the circuit.
+  - Finish with the stretches it gives you.

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}History · FitLog{% endblock %}
+{% block content %}
+<h1>Last 30 days</h1>
+<section class="card">
+  <table class="history">
+    <thead><tr><th>Day</th><th class="num">kcal</th><th></th><th class="num">Exercise</th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+    <tr>
+      <td><a href="/day/{{ row.day.isoformat() }}">{{ row.day.strftime('%a %b %-d') }}</a></td>
+      <td class="num">{{ row.calories|fmt if row.calories else '—' }}</td>
+      <td class="bar"><meter min="0" max="{{ target or 1 }}" high="{{ target or 1 }}" value="{{ row.calories }}"></meter></td>
+      <td class="num">{% if row.planned %}{{ row.done }}/{{ row.planned }}{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% for food in foods %}
+<form class="result" hx-post="/food/add" hx-target="#food-log" hx-swap="outerHTML">
+  <input type="hidden" name="day" value="{{ day.isoformat() }}">
+  <input type="hidden" name="food_id" value="{{ food.id }}">
+  <div>
+    <div>{{ food.name }}</div>
+    <div class="muted">{{ food.serving }} · {{ food.calories|fmt }} kcal</div>
+  </div>
+  <input name="servings" type="number" value="1" min="0.1" step="0.1" aria-label="Servings">
+  <button>Add</button>
+</form>
+{% else %}
+<p class="muted">No matching foods. Add a file under data/foods, or use quick add.</p>
+{% endfor %}

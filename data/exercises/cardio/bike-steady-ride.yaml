@@ -1,0 +1,12 @@
+name: "Exercise Bike: Steady Ride"
+type: cardio
+prescription: 20-30 minutes
+minutes: 30
+muscles: [legs, heart]
+equipment: [exercise bike]
+steps:
+  - Set the seat so your knee is slightly bent at the bottom of each pedal stroke.
+  - Pedal for 5 minutes at light resistance to warm up.
+  - Raise the resistance until you are breathing harder but can still talk in short sentences.
+  - Hold that effort at a steady cadence for the main ride.
+  - Drop the resistance for the last 5 minutes to cool down.

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ day.strftime('%a %b %-d') }} · FitLog{% endblock %}
+{% block content %}
+<div class="daynav">
+  <a href="/day/{{ day.fromordinal(day.toordinal() - 1).isoformat() }}" aria-label="Previous day">&larr;</a>
+  <h1>{% if day == today %}Today{% else %}{{ day.strftime('%A') }}{% endif %}
+    <small>{{ day.strftime('%B %-d, %Y') }}</small></h1>
+  {% if day < today %}
+  <a href="/day/{{ day.fromordinal(day.toordinal() + 1).isoformat() }}" aria-label="Next day">&rarr;</a>
+  {% else %}<span></span>{% endif %}
+</div>
+
+<div class="columns">
+  <section class="card">
+    <h2>Food</h2>
+    {% include "_food_log.html" %}
+    <div class="search">
+      <input type="hidden" id="search-day" name="day" value="{{ day.isoformat() }}">
+      <input name="q" type="search" placeholder="Search foods…" autocomplete="off"
+             hx-get="/foods/search" hx-include="#search-day" hx-target="#food-results"
+             hx-trigger="input changed delay:200ms, focus once">
+    </div>
+    <div id="food-results"></div>
+  </section>
+
+  <section class="card">
+    <h2>Exercise</h2>
+    {% include "_plan.html" %}
+  </section>
+</div>
+{% endblock %}

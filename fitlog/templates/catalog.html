@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Catalog · FitLog{% endblock %}
+{% block content %}
+<h1>Catalog</h1>
+<div class="columns">
+  <section class="card">
+    <h2>Foods <span class="muted">{{ foods|length }}</span></h2>
+    <table class="log">
+      <thead><tr><th>Name</th><th>Serving</th><th class="num">kcal</th></tr></thead>
+      {% for food in foods %}
+      <tr><td>{{ food.name }}</td><td class="muted">{{ food.serving }}</td><td class="num">{{ food.calories|fmt }}</td></tr>
+      {% endfor %}
+    </table>
+  </section>
+  <section class="card">
+    <h2>Exercises <span class="muted">{{ exercises|length }}</span></h2>
+    {% for ex in exercises %}
+    <details class="catalog-exercise">
+      <summary><span class="tag">{{ ex.type }}</span> {{ ex.name }}</summary>
+      <p>{% if ex.prescription %}{{ ex.prescription }} · {% endif %}~{{ ex.duration|fmt }} min</p>
+      {% if ex.muscles %}<p class="muted">Works: {{ ex.muscles|join(', ') }}</p>{% endif %}
+      {% if ex.equipment %}<p class="muted">Needs: {{ ex.equipment|join(', ') }}</p>{% endif %}
+      <ol>{% for step in ex.steps %}<li>{{ step }}</li>{% endfor %}</ol>
+      {% if ex.tips %}<ul class="tips">{% for tip in ex.tips %}<li>{{ tip }}</li>{% endfor %}</ul>{% endif %}
+    </details>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+# Example deployment. ./catalog is a git clone of this repo that the app pulls
+# on a timer; ./state holds the SQLite database. Both must be owned by uid 1000.
+services:
+  fitlog:
+    build: .
+    container_name: fitlog
+    restart: always
+    ports:
+      - "127.0.0.1:${FITLOG_PORT:-8000}:8000"
+    environment:
+      FITLOG_TIMEZONE: ${FITLOG_TIMEZONE:-America/Los_Angeles}
+      FITLOG_PULL_MINUTES: ${FITLOG_PULL_MINUTES:-10}
+    volumes:
+      - ./state:/data
+      - ./catalog:/catalog

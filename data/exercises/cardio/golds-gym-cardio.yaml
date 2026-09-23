@@ -1,0 +1,12 @@
+name: "Gold's Gym Cardio Workout"
+type: cardio
+prescription: 20-30 minutes
+minutes: 25
+muscles: [arms, shoulders, core, heart]
+equipment: [Wii, Wii Remote and Nunchuk]
+steps:
+  - "Start Gold's Gym: Cardio Workout."
+  - Hold the Wii Remote in one hand and the Nunchuk in the other, straps on.
+  - Pick a workout session of 20-30 minutes.
+  - Stay in a boxing stance with knees soft and punch in time with the prompts.
+  - Walk it off for a couple of minutes at the end.

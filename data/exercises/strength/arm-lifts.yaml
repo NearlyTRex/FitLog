@@ -1,0 +1,13 @@
+name: Arm Lifts
+type: strength
+prescription: 3 sets of 15 reps
+minutes: 6
+muscles: [biceps, forearms]
+equipment: [dumbbells]
+steps:
+  - Stand holding a dumbbell in each hand with your arms in front of you in a V shape.
+  - Bend your elbows to lift the weights toward your shoulders.
+  - Lower them back to the V shape.
+  - Do not lower all the way down; keep the V so your elbows never lock straight.
+tips:
+  - Going all the way down can hyperextend your elbows.

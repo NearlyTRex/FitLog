@@ -1,0 +1,12 @@
+name: "Wii Fit Plus: Yoga"
+type: mobility
+prescription: 15-20 minutes
+minutes: 20
+muscles: [full body]
+equipment: [Wii, Balance Board, yoga mat]
+steps:
+  - Start Wii Fit Plus (or Wii Fit) and load your profile on the Balance Board.
+  - Open Yoga.
+  - Pick 5-6 poses, starting with Deep Breathing.
+  - Hold each pose while keeping the balance marker inside the target area.
+  - End with a slow breathing pose.

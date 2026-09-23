@@ -1,0 +1,12 @@
+name: "Wii Fit Plus: Strength Training"
+type: strength
+prescription: 20 minutes
+minutes: 20
+muscles: [full body]
+equipment: [Wii, Balance Board]
+steps:
+  - Start Wii Fit Plus (or Wii Fit) and load your profile on the Balance Board.
+  - Open Strength Training.
+  - Pick 4-6 exercises that cover legs, arms, and core.
+  - Follow the trainer's pace and keep your balance centered on the board.
+  - Raise the rep count on exercises that feel easy.

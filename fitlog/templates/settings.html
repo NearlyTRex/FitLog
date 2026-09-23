@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Settings · FitLog{% endblock %}
+{% block content %}
+<script src="/static/settings.js" defer></script>
+<h1>Settings</h1>
+{% if message %}<p class="notice">{{ message }}</p>{% endif %}
+<div class="columns">
+  <section class="card">
+    <h2>Targets</h2>
+    <form method="post" action="/settings">
+      <input type="hidden" name="csrf" value="{{ session.csrf_token }}">
+      <label>Daily calorie target
+        <input name="calorie_target" type="number" min="0" step="1" value="{{ calorie_target }}" required>
+      </label>
+      <label>Exercise time per day (minutes)
+        <input name="minutes_per_day" type="number" min="5" max="240" value="{{ minutes_per_day }}" required>
+      </label>
+      <label>Most exercises per day
+        <input name="exercises_per_day" type="number" min="1" max="20" value="{{ exercises_per_day }}" required>
+      </label>
+      <p class="muted">Changes apply from the next day's plan.</p>
+      <button class="primary">Save</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2>Catalog</h2>
+    <p>{{ catalog.foods|length }} foods, {{ catalog.exercises|length }} exercises loaded.</p>
+    {% if has_repo %}
+      {% if last_pull %}
+      <p class="muted">Last pull: {{ 'ok' if last_pull[0] else 'failed' }}{% if last_pull[1] %} ({{ last_pull[1] }}){% endif %}</p>
+      {% endif %}
+    {% else %}
+      <p class="muted">No git repo configured; reloading from disk only.</p>
+    {% endif %}
+    {% if catalog.errors %}
+    <p class="error">{{ catalog.errors|length }} file(s) skipped:</p>
+    <ul class="errors">{% for e in catalog.errors %}<li><code>{{ e }}</code></li>{% endfor %}</ul>
+    {% endif %}
+    <form method="post" action="/settings/sync">
+      <input type="hidden" name="csrf" value="{{ session.csrf_token }}">
+      <button>Sync now</button>
+    </form>
+  </section>
+</div>
+
+<section class="card" id="exercises">
+  <h2>Exercises to pick from</h2>
+  <p class="muted">Uncheck anything you can't do right now. It's left out of new plans and swapped out of
+    today's plan if you haven't done it yet. New exercises in the catalog start checked.</p>
+  <form method="post" action="/settings/exercises">
+    <input type="hidden" name="csrf" value="{{ session.csrf_token }}">
+    <div class="choice-groups">
+    {% for type, exercises in groups %}
+      <fieldset class="choice-group">
+        <legend>{{ type|capitalize }}</legend>
+        <div class="group-toggle">
+          <button type="button" class="link" data-check="all">All</button>
+          <button type="button" class="link" data-check="none">None</button>
+        </div>
+        {% for ex in exercises %}
+        <label class="choice">
+          <input type="hidden" name="shown" value="{{ ex.id }}">
+          <input type="checkbox" name="include" value="{{ ex.id }}"{% if ex.id not in excluded %} checked{% endif %}>
+          <span>{{ ex.name }} <span class="muted">~{{ ex.duration|fmt }} min{% if ex.equipment %} · {{ ex.equipment|join(', ') }}{% endif %}</span></span>
+        </label>
+        {% endfor %}
+      </fieldset>
+    {% endfor %}
+    </div>
+    <button class="primary">Save exercise choices</button>
+  </form>
+</section>
+{% endblock %}

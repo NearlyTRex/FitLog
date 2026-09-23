@@ -1,0 +1,12 @@
+name: "Exercise Bike: Intervals"
+type: cardio
+prescription: "8 rounds of 30 seconds hard, 90 seconds easy"
+minutes: 26
+muscles: [legs, heart]
+equipment: [exercise bike]
+steps:
+  - Warm up for 5 minutes at light resistance.
+  - Raise the resistance and pedal hard for 30 seconds.
+  - Drop back to easy pedaling for 90 seconds.
+  - Repeat for 8 rounds.
+  - Finish with 5 minutes of easy pedaling.

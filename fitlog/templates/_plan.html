@@ -1,0 +1,42 @@
+<div id="plan">
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  {% if plan %}
+  <p class="muted">About {{ plan_minutes|fmt }} of {{ minutes_per_day }} minutes</p>
+  {% else %}
+  <p class="muted">{% if day == today %}No exercises to pick from. Check some in <a href="/settings#exercises">Settings</a>, or add files under data/exercises.{% else %}No workout was planned this day.{% endif %}</p>
+  {% endif %}
+  {% for item in plan %}
+  {% set ex = item.exercise %}
+  <article class="exercise{% if item.done %} done{% endif %}">
+    <header>
+      <div>
+        <h3>{{ ex.name if ex else item.exercise_id }}</h3>
+        {% if ex %}
+        <p class="muted"><span class="tag">{{ ex.type }}</span>{% if ex.prescription %} {{ ex.prescription }}{% endif %} · ~{{ ex.duration|fmt }} min</p>
+        {% else %}
+        <p class="muted">No longer in the catalog.</p>
+        {% endif %}
+      </div>
+      <div class="actions">
+        <button hx-post="/plan/{{ item.position }}/done" hx-vals='{"day": "{{ day.isoformat() }}", "done": "{{ '' if item.done else '1' }}"}'
+                hx-target="#plan" hx-swap="outerHTML" class="{{ 'primary' if not item.done else '' }}">
+          {{ 'Done ✓' if item.done else 'Mark done' }}</button>
+        {% if not item.done and day == today %}
+        <button hx-post="/plan/{{ item.position }}/reroll" hx-vals='{"day": "{{ day.isoformat() }}"}'
+                hx-target="#plan" hx-swap="outerHTML">Swap</button>
+        {% endif %}
+      </div>
+    </header>
+    {% if ex %}
+    <details{% if not item.done %} open{% endif %}>
+      <summary>How to do it</summary>
+      {% if ex.muscles or ex.equipment %}
+      <p class="muted">{% if ex.muscles %}Works: {{ ex.muscles|join(', ') }}{% endif %}{% if ex.muscles and ex.equipment %} · {% endif %}{% if ex.equipment %}Needs: {{ ex.equipment|join(', ') }}{% endif %}</p>
+      {% endif %}
+      <ol>{% for step in ex.steps %}<li>{{ step }}</li>{% endfor %}</ol>
+      {% if ex.tips %}<ul class="tips">{% for tip in ex.tips %}<li>{{ tip }}</li>{% endfor %}</ul>{% endif %}
+    </details>
+    {% endif %}
+  </article>
+  {% endfor %}
+</div>
