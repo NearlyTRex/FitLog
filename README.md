@@ -113,3 +113,19 @@ docker compose exec fitlog fitlog user create me
 ```
 
 Code changes need a rebuild. Catalog changes only need a push.
+
+## Releasing
+
+The version in `pyproject.toml` is the only place a version is written. Never tag by hand.
+
+1. On GitHub, open **Actions → prepare release → Run workflow**. Enter `patch`, `minor`, `major`,
+   or an exact version like `1.4.0`. It runs the checks, bumps `pyproject.toml` on a
+   `release/vX.Y.Z` branch, and opens a PR.
+2. Merge the PR. **release** notices that the version on `main` has no tag, runs the checks,
+   then tags `vX.Y.Z` and publishes a GitHub Release with generated notes.
+
+A push to `main` that doesn't change the version finds the tag already there and releases
+nothing.
+
+PRs opened by the workflow don't trigger the `check` workflow (GitHub doesn't run workflows for
+events made with the workflow token). The checks run inside both release workflows instead.
