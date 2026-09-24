@@ -1,5 +1,5 @@
 import random
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import pytest
 
@@ -87,9 +87,9 @@ def test_reroll_with_nothing_left(db, tmp_path):
 
 
 def test_food_log_scales_and_totals(db, store):
-    tracker.add_food(db, store.catalog, DAY, "banana", 2)
-    tracker.add_food(db, store.catalog, DAY, "toast", 0.5)
-    tracker.add_custom(db, DAY, "Latte", 190)
+    tracker.add_food(db, store.catalog, DAY, "banana", 2, "breakfast")
+    tracker.add_food(db, store.catalog, DAY, "toast", 0.5, "breakfast")
+    tracker.add_custom(db, DAY, "Latte", 190, "snack")
     entries = tracker.day_entries(db, DAY)
     assert [e["calories"] for e in entries] == [210, 40, 190]
     assert tracker.totals(entries) == {"calories": 440, "protein": 2.6, "carbs": 0, "fat": 0}
@@ -99,15 +99,17 @@ def test_food_log_scales_and_totals(db, store):
 
 def test_food_log_rejects_bad_input(db, store):
     with pytest.raises(tracker.TrackerError):
-        tracker.add_food(db, store.catalog, DAY, "nope", 1)
+        tracker.add_food(db, store.catalog, DAY, "nope", 1, "lunch")
     with pytest.raises(tracker.TrackerError):
-        tracker.add_food(db, store.catalog, DAY, "banana", 0)
+        tracker.add_food(db, store.catalog, DAY, "banana", 0, "lunch")
     with pytest.raises(tracker.TrackerError):
-        tracker.add_custom(db, DAY, "  ", 10)
+        tracker.add_custom(db, DAY, "  ", 10, "lunch")
+    with pytest.raises(tracker.TrackerError):
+        tracker.add_custom(db, DAY, "Toast", 10, "brunch")
 
 
 def test_history(db, store):
-    tracker.add_food(db, store.catalog, DAY, "banana", 1)
+    tracker.add_food(db, store.catalog, DAY, "banana", 1, "dinner")
     tracker.get_plan(db, store.catalog, DAY, create=True)
     tracker.set_done(db, DAY, 1, True)
     rows = tracker.history(db, DAY, 3)
@@ -195,3 +197,34 @@ def test_budget_leftover_is_not_filled_with_repeats(db, tmp_path):
         yesterday = ids(tracker.get_plan(db, catalog, day - timedelta(days=1)))
         today = ids(tracker.get_plan(db, catalog, day, create=True, rng=random.Random(seed)))
         assert not today & yesterday
+
+
+def test_entries_group_by_meal(db, store):
+    tracker.add_food(db, store.catalog, DAY, "toast", 1, "dinner")
+    tracker.add_food(db, store.catalog, DAY, "banana", 1, "breakfast")
+    tracker.add_custom(db, DAY, "Chips", 150, "snack")
+    tracker.add_custom(db, DAY, "Fruit", 50, "breakfast")
+    groups = tracker.by_meal(tracker.day_entries(db, DAY))
+    assert [m for m, _, _ in groups] == ["breakfast", "lunch", "dinner", "snack"]
+    assert [[e["name"] for e in g] for _, g, _ in groups] == [["Banana", "Fruit"], [], ["Toast"], ["Chips"]]
+    assert [t["calories"] for _, _, t in groups] == [155, 0, 80, 150]
+
+
+@pytest.mark.parametrize("hour,meal", [(7, "breakfast"), (12, "lunch"), (18, "dinner"), (22, "snack"), (2, "snack")])
+def test_default_meal(hour, meal):
+    assert tracker.default_meal(datetime(2026, 9, 23, hour)) == meal
+
+
+def test_old_database_gets_meal_column(tmp_path):
+    import sqlite3
+    from fitlog.db import Database
+    path = tmp_path / "old.db"
+    conn = sqlite3.connect(path)
+    conn.execute("CREATE TABLE food_log (id INTEGER PRIMARY KEY, day TEXT NOT NULL, food_id TEXT, "
+                 "name TEXT NOT NULL, servings REAL NOT NULL, calories REAL NOT NULL, "
+                 "protein REAL, carbs REAL, fat REAL)")
+    conn.execute("INSERT INTO food_log (day, name, servings, calories) VALUES ('2026-01-01', 'Old', 1, 5)")
+    conn.commit()
+    conn.close()
+    db = Database(path)
+    assert tracker.day_entries(db, date(2026, 1, 1))[0]["meal"] == "snack"

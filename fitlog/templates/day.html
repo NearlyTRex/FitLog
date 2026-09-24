@@ -14,6 +14,12 @@
   <section class="card">
     <h2>Food</h2>
     {% include "_food_log.html" %}
+    <fieldset class="meal-picker">
+      <legend>Add to</legend>
+      {% for meal in meal_names %}
+      <label><input type="radio" name="meal" value="{{ meal }}"{% if meal == default_meal %} checked{% endif %}><span>{{ meal|capitalize }}</span></label>
+      {% endfor %}
+    </fieldset>
     <div class="search">
       <input type="hidden" id="search-day" name="day" value="{{ day.isoformat() }}">
       <input name="q" type="search" placeholder="Search foods…" autocomplete="off"

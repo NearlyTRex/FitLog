@@ -74,12 +74,17 @@ def test_security_headers(client):
     response = client.get("/login")
     assert "frame-ancestors 'none'" in response.headers["content-security-policy"]
     assert response.headers["x-frame-options"] == "DENY"
+    # no-referrer makes browsers send "Origin: null" on same-origin form posts, which the origin check refuses
+    assert response.headers["referrer-policy"] == "same-origin"
     assert response.headers["cache-control"] == "no-store"
 
 
 def test_today_shows_plan_and_foods(client, csrf):
     page = client.get("/").text
-    assert page.count('class="exercise') == 4
+    assert page.count('<article class="exercise') == 4
+    assert page.count("popovertarget=") == 8
+    assert page.count('type="checkbox" name="done"') == 4
+    assert page.count('type="radio" name="meal"') == 4
     assert "Do it." in page
     results = client.get("/foods/search", params={"q": "ban"}).text
     assert "Banana" in results and "Toast" not in results
@@ -92,21 +97,38 @@ def test_post_without_csrf_is_rejected(client, csrf):
 
 
 def test_cross_origin_post_is_refused(client, csrf):
-    response = client.post("/food/custom", data={"day": "2026-01-01", "name": "x", "calories": 1},
-                           headers={"X-CSRF-Token": csrf, "Origin": "https://evil.example"})
-    assert response.status_code == 403
+    for origin in ("https://evil.example", "null"):
+        response = client.post("/food/custom", data={"day": "2026-01-01", "name": "x", "calories": 1},
+                               headers={"X-CSRF-Token": csrf, "Origin": origin})
+        assert response.status_code == 403
+
+
+def test_same_origin_login_post_is_allowed(client, secret):
+    response = client.post("/login", data={"username": "me", "password": PASSWORD,
+                                           "code": pyotp.TOTP(secret).now()},
+                           headers={"Origin": "http://testserver"}, follow_redirects=False)
+    assert response.status_code == 303
 
 
 def test_log_food_and_mark_done(client, csrf):
     headers = {"X-CSRF-Token": csrf, "HX-Request": "true"}
     day = client.get("/").text
     day_iso = re.search(r'name="day" value="([\d-]+)"', day).group(1)
-    response = client.post("/food/add", data={"day": day_iso, "food_id": "banana", "servings": 2}, headers=headers)
+    response = client.post("/food/add", data={"day": day_iso, "food_id": "banana", "servings": 2,
+                                              "meal": "breakfast"}, headers=headers)
     assert response.status_code == 200 and "210" in response.text
-    response = client.post("/food/custom", data={"day": day_iso, "name": "Latte", "calories": 190}, headers=headers)
+    assert re.search(r"<h3>Breakfast <span[^>]*>210 kcal", response.text)
+    response = client.post("/food/custom", data={"day": day_iso, "name": "Latte", "calories": 190,
+                                                 "meal": "snack"}, headers=headers)
     assert "400" in response.text and "Latte" in response.text
+    assert re.search(r"<h3>Snack <span[^>]*>190 kcal", response.text)
+    response = client.post("/food/custom", data={"day": day_iso, "name": "X", "calories": 1,
+                                                 "meal": "brunch"}, headers=headers)
+    assert "Meal must be one of" in response.text
     response = client.post("/plan/0/done", data={"day": day_iso, "done": "1"}, headers=headers)
-    assert "Done ✓" in response.text
+    assert "1 of 4 done" in response.text and " checked\n" in response.text
+    response = client.post("/plan/0/done", data={"day": day_iso}, headers=headers)
+    assert "0 of 4 done" in response.text
 
 
 def test_settings(client, csrf):
@@ -125,7 +147,7 @@ def test_logout(client, csrf):
 
 def test_exercise_choices(client, csrf, app_db):
     page = client.get("/").text
-    planned = re.findall(r"<h3>([^<]+)</h3>", page)
+    planned = re.findall(r'class="exercise-title">\s*<h3>([^<]+)</h3>', page)
     settings = client.get("/settings").text
     assert settings.count('type="checkbox" name="include"') == 8
     assert settings.count(" checked>") == 8
@@ -138,7 +160,7 @@ def test_exercise_choices(client, csrf, app_db):
     from fitlog import tracker
     assert tracker.get_excluded(app_db) == {f"c{i}" for i in range(4)}
     page = client.get("/").text
-    now = re.findall(r"<h3>([^<]+)</h3>", page)
+    now = re.findall(r'class="exercise-title">\s*<h3>([^<]+)</h3>', page)
     assert all(name.startswith("Strength") for name in now)
     assert len(now) <= len(planned)
 

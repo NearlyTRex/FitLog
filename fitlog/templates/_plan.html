@@ -1,7 +1,10 @@
 <div id="plan">
   {% if error %}<p class="error">{{ error }}</p>{% endif %}
   {% if plan %}
-  <p class="muted">About {{ plan_minutes|fmt }} of {{ minutes_per_day }} minutes</p>
+  {% set done_count = plan|selectattr("done")|list|length %}
+  <p class="progress"><strong>{{ done_count }} of {{ plan|length }} done</strong>
+    <span class="muted">· about {{ plan_minutes|fmt }} of {{ minutes_per_day }} minutes</span></p>
+  <meter min="0" max="{{ plan|length }}" value="{{ done_count }}"></meter>
   {% else %}
   <p class="muted">{% if day == today %}No exercises to pick from. Check some in <a href="/settings#exercises">Settings</a>, or add files under data/exercises.{% else %}No workout was planned this day.{% endif %}</p>
   {% endif %}
@@ -9,7 +12,12 @@
   {% set ex = item.exercise %}
   <article class="exercise{% if item.done %} done{% endif %}">
     <header>
-      <div>
+      <label class="done-check">
+        <input type="checkbox" name="done" value="1"{% if item.done %} checked{% endif %}
+               hx-post="/plan/{{ item.position }}/done" hx-trigger="change" hx-vals='{"day": "{{ day.isoformat() }}"}'
+               hx-target="#plan" hx-swap="outerHTML" aria-label="Done: {{ ex.name if ex else item.exercise_id }}">
+      </label>
+      <div class="exercise-title">
         <h3>{{ ex.name if ex else item.exercise_id }}</h3>
         {% if ex %}
         <p class="muted"><span class="tag">{{ ex.type }}</span>{% if ex.prescription %} {{ ex.prescription }}{% endif %} · ~{{ ex.duration|fmt }} min</p>
@@ -17,25 +25,31 @@
         <p class="muted">No longer in the catalog.</p>
         {% endif %}
       </div>
-      <div class="actions">
-        <button hx-post="/plan/{{ item.position }}/done" hx-vals='{"day": "{{ day.isoformat() }}", "done": "{{ '' if item.done else '1' }}"}'
-                hx-target="#plan" hx-swap="outerHTML" class="{{ 'primary' if not item.done else '' }}">
-          {{ 'Done ✓' if item.done else 'Mark done' }}</button>
-        {% if not item.done and day == today %}
-        <button hx-post="/plan/{{ item.position }}/reroll" hx-vals='{"day": "{{ day.isoformat() }}"}'
-                hx-target="#plan" hx-swap="outerHTML">Swap</button>
-        {% endif %}
-      </div>
     </header>
-    {% if ex %}
-    <details{% if not item.done %} open{% endif %}>
-      <summary>How to do it</summary>
-      {% if ex.muscles or ex.equipment %}
-      <p class="muted">{% if ex.muscles %}Works: {{ ex.muscles|join(', ') }}{% endif %}{% if ex.muscles and ex.equipment %} · {% endif %}{% if ex.equipment %}Needs: {{ ex.equipment|join(', ') }}{% endif %}</p>
+    <div class="actions">
+      {% if ex %}
+      <button type="button" popovertarget="how-{{ item.position }}">How to do it</button>
       {% endif %}
+      {% if not item.done and day == today %}
+      <button hx-post="/plan/{{ item.position }}/reroll" hx-vals='{"day": "{{ day.isoformat() }}"}'
+              hx-target="#plan" hx-swap="outerHTML">Swap</button>
+      {% endif %}
+    </div>
+    {% if ex %}
+    <div popover id="how-{{ item.position }}" class="howto">
+      <header>
+        <div>
+          <h3>{{ ex.name }}</h3>
+          <p class="muted">{% if ex.prescription %}{{ ex.prescription }} · {% endif %}~{{ ex.duration|fmt }} min</p>
+        </div>
+        <button type="button" class="link close" popovertarget="how-{{ item.position }}" popovertargetaction="hide"
+                aria-label="Close">&times;</button>
+      </header>
+      {% if ex.muscles %}<p><strong>Works:</strong> {{ ex.muscles|join(', ') }}</p>{% endif %}
+      {% if ex.equipment %}<p><strong>Needs:</strong> {{ ex.equipment|join(', ') }}</p>{% endif %}
       <ol>{% for step in ex.steps %}<li>{{ step }}</li>{% endfor %}</ol>
       {% if ex.tips %}<ul class="tips">{% for tip in ex.tips %}<li>{{ tip }}</li>{% endfor %}</ul>{% endif %}
-    </details>
+    </div>
     {% endif %}
   </article>
   {% endfor %}

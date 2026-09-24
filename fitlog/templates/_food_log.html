@@ -8,25 +8,31 @@
   {% if totals.protein or totals.carbs or totals.fat %}
   <p class="muted macros">P {{ totals.protein|fmt }}g · C {{ totals.carbs|fmt }}g · F {{ totals.fat|fmt }}g</p>
   {% endif %}
-  {% if entries %}
-  <table class="log">
-    {% for entry in entries %}
-    <tr>
-      <td>{{ entry.name }}{% if entry.food_id and entry.servings != 1 %} <span class="muted">×{{ entry.servings|fmt }}</span>{% endif %}</td>
-      <td class="num">{{ entry.calories|fmt }}</td>
-      <td class="num">
-        <button class="link danger" hx-post="/food/{{ entry.id }}/delete" hx-vals='{"day": "{{ day.isoformat() }}"}'
-                hx-target="#food-log" hx-swap="outerHTML" aria-label="Remove {{ entry.name }}">&times;</button>
-      </td>
-    </tr>
-    {% endfor %}
-  </table>
-  {% else %}
-  <p class="muted">Nothing logged yet.</p>
-  {% endif %}
+  {% for meal, group, subtotal in meals %}
+  <div class="meal">
+    <h3>{{ meal|capitalize }}{% if group %} <span class="muted">{{ subtotal.calories|fmt }} kcal</span>{% endif %}</h3>
+    {% if group %}
+    <table class="log">
+      {% for entry in group %}
+      <tr>
+        <td>{{ entry.name }}{% if entry.food_id and entry.servings != 1 %} <span class="muted">×{{ entry.servings|fmt }}</span>{% endif %}</td>
+        <td class="num">{{ entry.calories|fmt }}</td>
+        <td class="num">
+          <button class="link danger" hx-post="/food/{{ entry.id }}/delete" hx-vals='{"day": "{{ day.isoformat() }}"}'
+                  hx-target="#food-log" hx-swap="outerHTML" aria-label="Remove {{ entry.name }}">&times;</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p class="muted empty">Nothing yet</p>
+    {% endif %}
+  </div>
+  {% endfor %}
   <details class="custom"{% if error %} open{% endif %}>
-    <summary>Quick add calories</summary>
-    <form hx-post="/food/custom" hx-target="#food-log" hx-swap="outerHTML">
+    <summary>Quick add calories (to the meal picked below)</summary>
+    <form hx-post="/food/custom" hx-target="#food-log" hx-swap="outerHTML"
+          hx-include="input[name=meal]:checked">
       <input type="hidden" name="day" value="{{ day.isoformat() }}">
       <input name="name" placeholder="What was it?" required>
       <input name="calories" type="number" min="0" step="1" placeholder="kcal" required>

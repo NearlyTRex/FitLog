@@ -1,5 +1,6 @@
 {% for food in foods %}
-<form class="result" hx-post="/food/add" hx-target="#food-log" hx-swap="outerHTML">
+<form class="result" hx-post="/food/add" hx-target="#food-log" hx-swap="outerHTML"
+      hx-include="input[name=meal]:checked">
   <input type="hidden" name="day" value="{{ day.isoformat() }}">
   <input type="hidden" name="food_id" value="{{ food.id }}">
   <div>

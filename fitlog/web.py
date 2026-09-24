@@ -24,7 +24,7 @@ SECURITY_HEADERS = {
     ),
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
-    "Referrer-Policy": "no-referrer",
+    "Referrer-Policy": "same-origin",
     "Cross-Origin-Opener-Policy": "same-origin",
 }
 
@@ -155,6 +155,9 @@ def create_app(config=None, db=None, store=None, sync_in_background=True):
         return {
             "day": day,
             "entries": entries,
+            "meals": tracker.by_meal(entries),
+            "meal_names": tracker.MEALS,
+            "default_meal": tracker.default_meal(datetime.now(config.timezone)) if day == today() else "breakfast",
             "totals": tracker.totals(entries),
             "target": float(db.get_setting("calorie_target")),
             "plan": plan,
@@ -187,22 +190,22 @@ def create_app(config=None, db=None, store=None, sync_in_background=True):
 
     @app.post("/food/add", response_class=HTMLResponse)
     async def food_add(request: Request, day: str = Form(...), food_id: str = Form(...),
-                       servings: float = Form(1.0)):
+                       servings: float = Form(1.0), meal: str = Form("snack")):
         session = await require_session(request)
         day = parse_day(day)
         try:
-            tracker.add_food(db, store.catalog, day, food_id, servings)
+            tracker.add_food(db, store.catalog, day, food_id, servings, meal)
         except tracker.TrackerError as e:
             return food_partial(request, session, day, str(e))
         return food_partial(request, session, day)
 
     @app.post("/food/custom", response_class=HTMLResponse)
     async def food_custom(request: Request, day: str = Form(...), name: str = Form(""),
-                          calories: float = Form(0.0)):
+                          calories: float = Form(0.0), meal: str = Form("snack")):
         session = await require_session(request)
         day = parse_day(day)
         try:
-            tracker.add_custom(db, day, name, calories)
+            tracker.add_custom(db, day, name, calories, meal)
         except tracker.TrackerError as e:
             return food_partial(request, session, day, str(e))
         return food_partial(request, session, day)

@@ -29,6 +29,7 @@ CREATE INDEX IF NOT EXISTS login_attempts_at ON login_attempts(at);
 CREATE TABLE IF NOT EXISTS food_log (
     id INTEGER PRIMARY KEY,
     day TEXT NOT NULL,
+    meal TEXT NOT NULL DEFAULT 'snack',
     food_id TEXT,
     name TEXT NOT NULL,
     servings REAL NOT NULL,
@@ -67,6 +68,9 @@ class Database:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as conn:
             conn.executescript(SCHEMA)
+            columns = {r["name"] for r in conn.execute("PRAGMA table_info(food_log)")}
+            if "meal" not in columns:
+                conn.execute("ALTER TABLE food_log ADD COLUMN meal TEXT NOT NULL DEFAULT 'snack'")
 
     @contextmanager
     def connect(self):

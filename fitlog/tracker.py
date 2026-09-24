@@ -12,7 +12,27 @@ class TrackerError(ValueError):
 
 # Food log
 
-def add_food(db, catalog, day, food_id, servings):
+MEALS = ("breakfast", "lunch", "dinner", "snack")
+
+
+def default_meal(now):
+    """The meal someone is most likely logging at this time of day."""
+    if 4 <= now.hour < 11:
+        return "breakfast"
+    if 11 <= now.hour < 16:
+        return "lunch"
+    if 16 <= now.hour < 21:
+        return "dinner"
+    return "snack"
+
+
+def _check_meal(meal):
+    if meal not in MEALS:
+        raise TrackerError(f"Meal must be one of {', '.join(MEALS)}")
+
+
+def add_food(db, catalog, day, food_id, servings, meal):
+    _check_meal(meal)
     food = catalog.foods.get(food_id)
     if food is None:
         raise TrackerError(f"Unknown food '{food_id}'")
@@ -24,14 +44,15 @@ def add_food(db, catalog, day, food_id, servings):
 
     with db.connect() as conn:
         conn.execute(
-            "INSERT INTO food_log (day, food_id, name, servings, calories, protein, carbs, fat) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (day.isoformat(), food.id, food.name, servings, scaled(food.calories),
+            "INSERT INTO food_log (day, meal, food_id, name, servings, calories, protein, carbs, fat) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (day.isoformat(), meal, food.id, food.name, servings, scaled(food.calories),
              scaled(food.protein), scaled(food.carbs), scaled(food.fat)),
         )
 
 
-def add_custom(db, day, name, calories):
+def add_custom(db, day, name, calories, meal):
+    _check_meal(meal)
     name = name.strip()
     if not name:
         raise TrackerError("Name is required")
@@ -39,8 +60,8 @@ def add_custom(db, day, name, calories):
         raise TrackerError("Calories must be zero or more")
     with db.connect() as conn:
         conn.execute(
-            "INSERT INTO food_log (day, name, servings, calories) VALUES (?, ?, 1, ?)",
-            (day.isoformat(), name, round(calories, 1)),
+            "INSERT INTO food_log (day, meal, name, servings, calories) VALUES (?, ?, ?, 1, ?)",
+            (day.isoformat(), meal, name, round(calories, 1)),
         )
 
 
@@ -62,6 +83,13 @@ def totals(entries):
         for key in result:
             result[key] += entry[key] or 0
     return {k: round(v, 1) for k, v in result.items()}
+
+
+def by_meal(entries):
+    """Group a day's entries into (meal, entries, totals), in meal order."""
+    return [(meal, group, totals(group))
+            for meal in MEALS
+            for group in [[e for e in entries if e["meal"] == meal]]]
 
 
 def history(db, end, days):
