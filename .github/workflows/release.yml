@@ -10,7 +10,7 @@ permissions: {}
 
 jobs:
   check:
-    uses: NearlyTRex/Workflows/.github/workflows/python-ci.yml@9ae8672e35efbf74b2c8dfe70e959ae775fb1e07 # 9ae8672
+    uses: NearlyTRex/Workflows/.github/workflows/python-ci.yml@765a25c08b845e12087b32a969dc11d5896f8e0e # v0.2.0
     permissions:
       contents: read
     with:
@@ -18,7 +18,7 @@ jobs:
 
   release:
     needs: check
-    uses: NearlyTRex/Workflows/.github/workflows/release.yml@9ae8672e35efbf74b2c8dfe70e959ae775fb1e07 # 9ae8672
+    uses: NearlyTRex/Workflows/.github/workflows/release.yml@765a25c08b845e12087b32a969dc11d5896f8e0e # v0.2.0
     permissions:
       contents: write
     with:

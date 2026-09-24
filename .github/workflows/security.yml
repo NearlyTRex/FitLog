@@ -16,14 +16,14 @@ concurrency:
 
 jobs:
   security:
-    uses: NearlyTRex/Workflows/.github/workflows/security.yml@9ae8672e35efbf74b2c8dfe70e959ae775fb1e07 # 9ae8672
+    uses: NearlyTRex/Workflows/.github/workflows/security.yml@765a25c08b845e12087b32a969dc11d5896f8e0e # v0.2.0
     permissions:
       contents: read
     with:
       pip-audit-files: requirements-dev.txt requirements.txt
 
   codeql:
-    uses: NearlyTRex/Workflows/.github/workflows/codeql.yml@9ae8672e35efbf74b2c8dfe70e959ae775fb1e07 # 9ae8672
+    uses: NearlyTRex/Workflows/.github/workflows/codeql.yml@765a25c08b845e12087b32a969dc11d5896f8e0e # v0.2.0
     permissions:
       actions: read
       contents: read
@@ -33,12 +33,12 @@ jobs:
 
   dependency-review:
     if: github.event_name == 'pull_request'
-    uses: NearlyTRex/Workflows/.github/workflows/dependency-review.yml@9ae8672e35efbf74b2c8dfe70e959ae775fb1e07 # 9ae8672
+    uses: NearlyTRex/Workflows/.github/workflows/dependency-review.yml@765a25c08b845e12087b32a969dc11d5896f8e0e # v0.2.0
     permissions:
       contents: read
 
   container-scan:
-    uses: NearlyTRex/Workflows/.github/workflows/container-scan.yml@9ae8672e35efbf74b2c8dfe70e959ae775fb1e07 # 9ae8672
+    uses: NearlyTRex/Workflows/.github/workflows/container-scan.yml@765a25c08b845e12087b32a969dc11d5896f8e0e # v0.2.0
     permissions:
       contents: read
     with:
