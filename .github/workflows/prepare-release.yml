@@ -1,4 +1,4 @@
-name: prepare release
+name: Prepare Release
 
 # Bumps the version and opens a PR. Merging it lets release.yml tag and publish.
 on:
@@ -13,7 +13,8 @@ permissions: {}
 
 jobs:
   prepare:
-    uses: NearlyTRex/Workflows/.github/workflows/prepare-release.yml@765a25c08b845e12087b32a969dc11d5896f8e0e # v0.2.0
+    name: Prepare
+    uses: NearlyTRex/Workflows/.github/workflows/prepare-release.yml@5afc5d2c4f534e1fb7daa83a4df2808063c8fa08 # v0.2.1
     permissions:
       contents: write
       pull-requests: write

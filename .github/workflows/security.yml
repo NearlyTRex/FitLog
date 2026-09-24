@@ -1,4 +1,4 @@
-name: security
+name: Security
 
 on:
   push:
@@ -16,14 +16,16 @@ concurrency:
 
 jobs:
   security:
-    uses: NearlyTRex/Workflows/.github/workflows/security.yml@765a25c08b845e12087b32a969dc11d5896f8e0e # v0.2.0
+    name: Security
+    uses: NearlyTRex/Workflows/.github/workflows/security.yml@5afc5d2c4f534e1fb7daa83a4df2808063c8fa08 # v0.2.1
     permissions:
       contents: read
     with:
       pip-audit-files: requirements-dev.txt requirements.txt
 
   codeql:
-    uses: NearlyTRex/Workflows/.github/workflows/codeql.yml@765a25c08b845e12087b32a969dc11d5896f8e0e # v0.2.0
+    name: CodeQL
+    uses: NearlyTRex/Workflows/.github/workflows/codeql.yml@5afc5d2c4f534e1fb7daa83a4df2808063c8fa08 # v0.2.1
     permissions:
       actions: read
       contents: read
@@ -32,13 +34,15 @@ jobs:
       languages: '["python", "actions"]'
 
   dependency-review:
+    name: Dependency Review
     if: github.event_name == 'pull_request'
-    uses: NearlyTRex/Workflows/.github/workflows/dependency-review.yml@765a25c08b845e12087b32a969dc11d5896f8e0e # v0.2.0
+    uses: NearlyTRex/Workflows/.github/workflows/dependency-review.yml@5afc5d2c4f534e1fb7daa83a4df2808063c8fa08 # v0.2.1
     permissions:
       contents: read
 
   container-scan:
-    uses: NearlyTRex/Workflows/.github/workflows/container-scan.yml@765a25c08b845e12087b32a969dc11d5896f8e0e # v0.2.0
+    name: Container Scan
+    uses: NearlyTRex/Workflows/.github/workflows/container-scan.yml@5afc5d2c4f534e1fb7daa83a4df2808063c8fa08 # v0.2.1
     permissions:
       contents: read
     with:

@@ -143,9 +143,9 @@ The workflows in `.github/workflows` call the shared ones in
 [NearlyTRex/Workflows](https://github.com/NearlyTRex/Workflows), pinned to a release. Dependabot
 moves the pin forward when that library releases.
 
-- **ci:** installs from `requirements-dev.txt` and runs ruff and `fitlog check data`. Then it runs
+- **CI:** installs from `requirements-dev.txt` and runs ruff and `fitlog check data`. Then it runs
   the tests, which fail below 100% line and branch coverage. Shellcheck and a JSON check also run.
-- **security:** runs on pushes and PRs, and weekly:
+- **Security:** runs on pushes and PRs, and weekly:
   - zizmor over the workflows
   - gitleaks over the git history
   - pip-audit over both locks
@@ -157,14 +157,14 @@ moves the pin forward when that library releases.
 
 The version in `pyproject.toml` is the only place a version is written. Never tag by hand.
 
-1. On GitHub, open **Actions → prepare release → Run workflow**. Enter `patch`, `minor`, `major`,
+1. On GitHub, open **Actions → Prepare Release → Run workflow**. Enter `patch`, `minor`, `major`,
    or an exact version like `1.4.0`. It bumps `pyproject.toml` on a `release/vX.Y.Z` branch and
    opens a PR.
-2. Merge the PR. **release** notices that the version on `main` has no tag, runs the checks,
+2. Merge the PR. **Release** notices that the version on `main` has no tag, runs the checks,
    then tags `vX.Y.Z` and publishes a GitHub Release with generated notes.
 
 A push to `main` that doesn't change the version finds the tag already there and releases
 nothing.
 
-PRs opened by the workflow don't trigger `ci` (GitHub doesn't run workflows for events made with
-the workflow token). The checks run inside **release** before anything is tagged.
+PRs opened by the workflow don't trigger CI (GitHub doesn't run workflows for events made with
+the workflow token). The checks run inside **Release** before anything is tagged.

@@ -1,4 +1,4 @@
-name: release
+name: Release
 
 # Tags and publishes the version in pyproject.toml once, after the checks pass.
 # Pushes that don't change the version find the tag already there and do nothing.
@@ -10,15 +10,17 @@ permissions: {}
 
 jobs:
   check:
-    uses: NearlyTRex/Workflows/.github/workflows/python-ci.yml@765a25c08b845e12087b32a969dc11d5896f8e0e # v0.2.0
+    name: Check
+    uses: NearlyTRex/Workflows/.github/workflows/python-ci.yml@5afc5d2c4f534e1fb7daa83a4df2808063c8fa08 # v0.2.1
     permissions:
       contents: read
     with:
       commands: fitlog check data
 
   release:
+    name: Release
     needs: check
-    uses: NearlyTRex/Workflows/.github/workflows/release.yml@765a25c08b845e12087b32a969dc11d5896f8e0e # v0.2.0
+    uses: NearlyTRex/Workflows/.github/workflows/release.yml@5afc5d2c4f534e1fb7daa83a4df2808063c8fa08 # v0.2.1
     permissions:
       contents: write
     with:

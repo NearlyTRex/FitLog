@@ -1,4 +1,4 @@
-name: ci
+name: CI
 
 on:
   push:
@@ -13,13 +13,15 @@ concurrency:
 
 jobs:
   python:
-    uses: NearlyTRex/Workflows/.github/workflows/python-ci.yml@765a25c08b845e12087b32a969dc11d5896f8e0e # v0.2.0
+    name: Python
+    uses: NearlyTRex/Workflows/.github/workflows/python-ci.yml@5afc5d2c4f534e1fb7daa83a4df2808063c8fa08 # v0.2.1
     permissions:
       contents: read
     with:
       commands: fitlog check data
 
   lint:
-    uses: NearlyTRex/Workflows/.github/workflows/lint.yml@765a25c08b845e12087b32a969dc11d5896f8e0e # v0.2.0
+    name: Lint
+    uses: NearlyTRex/Workflows/.github/workflows/lint.yml@5afc5d2c4f534e1fb7daa83a4df2808063c8fa08 # v0.2.1
     permissions:
       contents: read
