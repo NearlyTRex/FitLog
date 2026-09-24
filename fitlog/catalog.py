@@ -176,9 +176,11 @@ def _signature(root):
 class CatalogStore:
     """Holds the current catalog and swaps it when the files change."""
 
-    def __init__(self, root, repo=None):
+    def __init__(self, root, repo=None, url=None, branch="main"):
         self.root = Path(root)
         self.repo = Path(repo) if repo else None
+        self.url = url
+        self.branch = branch
         self._lock = threading.Lock()
         self._signature = None
         self.catalog = Catalog()
@@ -195,12 +197,14 @@ class CatalogStore:
             return False
 
     def pull(self):
+        """Pull the catalog repo, or clone it first when a URL is set and it isn't a checkout yet."""
         if self.repo is None:
             return None
-        result = subprocess.run(
-            ["git", "-C", str(self.repo), "pull", "--ff-only", "--quiet"],
-            capture_output=True, text=True, timeout=120,
-        )
+        if self.url and not (self.repo / ".git").exists():
+            command = ["git", "clone", "--quiet", "--branch", self.branch, self.url, str(self.repo)]
+        else:
+            command = ["git", "-C", str(self.repo), "pull", "--ff-only", "--quiet"]
+        result = subprocess.run(command, capture_output=True, text=True, timeout=120)
         self.last_pull = (result.returncode == 0, (result.stderr or result.stdout).strip())
         return self.last_pull
 

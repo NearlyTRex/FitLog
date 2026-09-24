@@ -1,0 +1,25 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    uses: NearlyTRex/Workflows/.github/workflows/python-ci.yml@9ae8672e35efbf74b2c8dfe70e959ae775fb1e07 # 9ae8672
+    permissions:
+      contents: read
+    with:
+      commands: fitlog check data
+
+  lint:
+    uses: NearlyTRex/Workflows/.github/workflows/lint.yml@9ae8672e35efbf74b2c8dfe70e959ae775fb1e07 # 9ae8672
+    permissions:
+      contents: read

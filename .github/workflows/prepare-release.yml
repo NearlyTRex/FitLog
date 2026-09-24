@@ -1,51 +1,22 @@
 name: prepare release
 
-# Bumps the version in pyproject.toml and opens a PR. Merging it triggers release.yml.
+# Bumps the version and opens a PR. Merging it lets release.yml tag and publish.
 on:
   workflow_dispatch:
     inputs:
       bump:
-        description: "patch, minor, major, or an exact version like 1.4.0"
+        description: patch, minor, major, or an exact version like 1.4.0
         required: true
         default: patch
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 jobs:
-  check:
-    uses: ./.github/workflows/check.yml
-
   prepare:
-    needs: check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Bump version
-        id: bump
-        env:
-          BUMP: ${{ inputs.bump }}
-        run: echo "version=$(python3 .github/scripts/bump_version.py "$BUMP")" >> "$GITHUB_OUTPUT"
-      - name: Refuse an existing tag
-        env:
-          VERSION: ${{ steps.bump.outputs.version }}
-        run: |
-          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
-            echo "::error::Tag v$VERSION already exists"
-            exit 1
-          fi
-      - name: Open pull request
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.bump.outputs.version }}
-          BASE: ${{ github.ref_name }}
-        run: |
-          branch="release/v$VERSION"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch -c "$branch"
-          git commit -am "Release v$VERSION"
-          git push origin "$branch"
-          gh pr create --base "$BASE" --head "$branch" --title "Release v$VERSION" \
-            --body "Sets the version to $VERSION. Merging this tags v$VERSION and publishes the release."
+    uses: NearlyTRex/Workflows/.github/workflows/prepare-release.yml@9ae8672e35efbf74b2c8dfe70e959ae775fb1e07 # 9ae8672
+    permissions:
+      contents: write
+      pull-requests: write
+    with:
+      bump: ${{ inputs.bump }}
+      version-file: pyproject.toml

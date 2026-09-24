@@ -1,0 +1,11 @@
+# Runtime dependencies; pyproject.toml reads this file. Regenerate the locks after editing:
+#   pip-compile --generate-hashes --allow-unsafe --strip-extras -o requirements.txt requirements.in
+#   pip-compile --generate-hashes --allow-unsafe --strip-extras -o requirements-dev.txt requirements-dev.in
+fastapi>=0.110
+uvicorn>=0.29
+jinja2>=3.1
+python-multipart>=0.0.9
+pyyaml>=6.0
+argon2-cffi>=23.1
+pyotp>=2.9
+qrcode>=7.4

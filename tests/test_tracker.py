@@ -228,3 +228,33 @@ def test_old_database_gets_meal_column(tmp_path):
     conn.close()
     db = Database(path)
     assert tracker.day_entries(db, date(2026, 1, 1))[0]["meal"] == "snack"
+
+
+def test_custom_calories_cannot_be_negative(db):
+    with pytest.raises(tracker.TrackerError):
+        tracker.add_custom(db, DAY, "Oops", -5, "snack")
+
+
+def test_pick_without_budget_takes_count():
+    exercises = [type("E", (), {"id": str(i), "type": t, "duration": 30})() for i, t in enumerate("aabbc")]
+    picked = tracker.pick_balanced(exercises, 4, random.Random(0))
+    assert len(picked) == 4
+    assert {e.type for e in picked} == {"a", "b", "c"}
+
+
+def test_reroll_unknown_position(db, store):
+    tracker.get_plan(db, store.catalog, DAY, create=True)
+    with pytest.raises(tracker.TrackerError, match="No such exercise"):
+        tracker.reroll(db, store.catalog, DAY, 99)
+
+
+def test_replace_excluded_drops_what_cannot_be_replaced(db, tmp_path):
+    root = tmp_path / "pair"
+    write(root / "exercises" / "a.yaml", exercise_yaml("A", "core"))
+    write(root / "exercises" / "b.yaml", exercise_yaml("B", "core"))
+    catalog = load_catalog(root)
+    db.set_setting("exercises_per_day", 2)
+    tracker.get_plan(db, catalog, DAY, create=True)
+    tracker.set_excluded(db, {"a", "b"})
+    tracker.replace_excluded(db, catalog, DAY)
+    assert tracker.get_plan(db, catalog, DAY) == []

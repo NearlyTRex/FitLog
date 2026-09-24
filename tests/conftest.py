@@ -53,6 +53,8 @@ def config(tmp_path, catalog_dir):
         db_path=tmp_path / "fitlog.db",
         catalog_dir=catalog_dir,
         catalog_repo=None,
+        catalog_url=None,
+        catalog_branch="main",
         pull_minutes=0,
         timezone=ZoneInfo("UTC"),
         secure_cookies=False,

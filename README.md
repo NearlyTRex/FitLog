@@ -60,7 +60,8 @@ left. A full game session counts against the time limit like anything else.
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -e '.[dev]'
+.venv/bin/pip install --require-hashes --no-deps -r requirements-dev.txt
+.venv/bin/pip install --no-deps --no-build-isolation -e .
 export FITLOG_SECURE_COOKIES=0          # plain http on localhost
 .venv/bin/fitlog user create me         # prompts for a password, shows a TOTP QR code
 .venv/bin/fitlog serve                  # http://127.0.0.1:8000
@@ -93,6 +94,8 @@ fitlog user reset-totp <name>       # new authenticator secret; signs out every 
 | `FITLOG_DB` | `var/fitlog.db` | SQLite database |
 | `FITLOG_CATALOG_DIR` | `data` | Folder holding `foods/` and `exercises/` |
 | `FITLOG_CATALOG_REPO` | unset | Git working tree to `pull --ff-only` before each reload |
+| `FITLOG_CATALOG_URL` | unset | Clone the catalog from here into `FITLOG_CATALOG_REPO` on first start |
+| `FITLOG_CATALOG_BRANCH` | `main` | Branch to clone |
 | `FITLOG_PULL_MINUTES` | `10` | Sync interval; `0` disables it (Settings has a Sync now button) |
 | `FITLOG_TIMEZONE` | `America/Los_Angeles` | Decides when "today" rolls over |
 | `FITLOG_SECURE_COOKIES` | `1` | Set `0` only for plain-http local use |
@@ -101,31 +104,67 @@ fitlog user reset-totp <name>       # new authenticator secret; signs out every 
 
 ## Deploying
 
-[`compose.yaml`](compose.yaml) runs the app behind a reverse proxy on `127.0.0.1:8000`. Next to
-it, `./catalog` is a git clone of this repo, which the container pulls on a timer. `./state`
-holds the database. Both must be owned by uid 1000.
+[`compose.yaml`](compose.yaml) runs the app behind a reverse proxy on `127.0.0.1:8000`, with two
+named volumes: `state` holds the database, and `catalog` is a clone of this repo. The app clones
+the catalog on first start and pulls it on a timer. The image creates both mount points owned by
+its user, so the app can write them even when the Docker daemon remaps container uids.
 
 ```bash
-git clone https://github.com/NearlyTRex/FitLog catalog
-mkdir state
 docker compose up -d --build
 docker compose exec fitlog fitlog user create me
 ```
 
 Code changes need a rebuild. Catalog changes only need a push.
 
+## Dependencies
+
+The app's dependencies are listed in `requirements.in`, which `pyproject.toml` reads.
+`requirements-dev.in` adds the test tools. Each compiles to a lock file that pins every package with
+hashes:
+
+- **`requirements.txt`:** the app. The Docker image installs it with `--require-hashes` and runs
+  the app from source.
+- **`requirements-dev.txt`:** the app plus the test tools. CI installs it the same way.
+
+The image's base is pinned by digest. Dependabot updates the locks, the base image and the pinned
+GitHub Actions weekly, waiting 7 days after an upstream release before proposing it.
+
+After editing either `.in` file, regenerate both locks:
+
+```bash
+pip install pip-tools
+pip-compile --generate-hashes --allow-unsafe --strip-extras -o requirements.txt requirements.in
+pip-compile --generate-hashes --allow-unsafe --strip-extras -o requirements-dev.txt requirements-dev.in
+```
+
+## CI
+
+The workflows in `.github/workflows` call the shared ones in
+[NearlyTRex/Workflows](https://github.com/NearlyTRex/Workflows), pinned to a release. Dependabot
+moves the pin forward when that library releases.
+
+- **ci:** installs from `requirements-dev.txt` and runs ruff and `fitlog check data`. Then it runs
+  the tests, which fail below 100% line and branch coverage. Shellcheck and a JSON check also run.
+- **security:** runs on pushes and PRs, and weekly:
+  - zizmor over the workflows
+  - gitleaks over the git history
+  - pip-audit over both locks
+  - CodeQL for Python and the workflows
+  - a Trivy scan of the Docker image
+  - dependency review on PRs
+
 ## Releasing
 
 The version in `pyproject.toml` is the only place a version is written. Never tag by hand.
 
 1. On GitHub, open **Actions → prepare release → Run workflow**. Enter `patch`, `minor`, `major`,
-   or an exact version like `1.4.0`. It runs the checks, bumps `pyproject.toml` on a
-   `release/vX.Y.Z` branch, and opens a PR.
+   or an exact version like `1.4.0`. It bumps `pyproject.toml` on a `release/vX.Y.Z` branch and
+   opens a PR.
 2. Merge the PR. **release** notices that the version on `main` has no tag, runs the checks,
    then tags `vX.Y.Z` and publishes a GitHub Release with generated notes.
 
 A push to `main` that doesn't change the version finds the tag already there and releases
 nothing.
 
-PRs opened by the workflow don't trigger the `check` workflow (GitHub doesn't run workflows for
-events made with the workflow token). The checks run inside both release workflows instead.
+PRs opened by the workflow don't trigger `ci` (GitHub doesn't run workflows for events made with
+the workflow token). The checks run inside **release** before anything is tagged.

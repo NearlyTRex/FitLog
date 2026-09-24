@@ -15,6 +15,8 @@ class Config:
     db_path: Path
     catalog_dir: Path
     catalog_repo: Path | None
+    catalog_url: str | None
+    catalog_branch: str
     pull_minutes: int
     timezone: ZoneInfo
     secure_cookies: bool
@@ -30,6 +32,8 @@ class Config:
             db_path=Path(env.get("FITLOG_DB", root / "var" / "fitlog.db")),
             catalog_dir=Path(env.get("FITLOG_CATALOG_DIR", root / "data")),
             catalog_repo=Path(repo) if repo else None,
+            catalog_url=env.get("FITLOG_CATALOG_URL") or None,
+            catalog_branch=env.get("FITLOG_CATALOG_BRANCH") or "main",
             pull_minutes=int(env.get("FITLOG_PULL_MINUTES", "10")),
             timezone=ZoneInfo(env.get("FITLOG_TIMEZONE", "America/Los_Angeles")),
             secure_cookies=_bool(env.get("FITLOG_SECURE_COOKIES"), True),

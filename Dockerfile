@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12-slim@sha256:2f17fc044b579bab302c2e8054d3a686e2cb9a83de48e70534b94cd8ebbe06a9
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git \
@@ -6,14 +6,23 @@ RUN apt-get update \
     && git config --system --add safe.directory /catalog
 
 WORKDIR /app
-COPY pyproject.toml ./
+COPY requirements.txt ./
+RUN pip install --no-cache-dir --require-hashes --no-deps -r requirements.txt
 COPY fitlog ./fitlog
-RUN pip install --no-cache-dir .
 
-ENV FITLOG_DB=/data/fitlog.db \
+# The app runs from source, so the image needs no build tools.
+RUN printf '#!/bin/sh\nexec python -m fitlog "$@"\n' > /usr/local/bin/fitlog \
+    && chmod 755 /usr/local/bin/fitlog
+
+ENV PYTHONPATH=/app \
+    FITLOG_DB=/data/fitlog.db \
     FITLOG_CATALOG_REPO=/catalog \
     FITLOG_CATALOG_DIR=/catalog/data \
     FITLOG_TRUST_PROXY=1
+
+# Named volumes mounted here start with this ownership, which is what lets the
+# app write them when the daemon remaps container uids.
+RUN mkdir -p /data /catalog && chown 1000:1000 /data /catalog
 
 USER 1000:1000
 EXPOSE 8000

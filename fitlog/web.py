@@ -42,13 +42,19 @@ def _fmt(value):
 def create_app(config=None, db=None, store=None, sync_in_background=True):
     config = config or Config.from_env()
     db = db or Database(config.db_path)
-    store = store or CatalogStore(config.catalog_dir, config.catalog_repo)
+    store = store or CatalogStore(config.catalog_dir, config.catalog_repo,
+                                  config.catalog_url, config.catalog_branch)
     templates = Jinja2Templates(directory=HERE / "templates")
     templates.env.filters["fmt"] = _fmt
 
     @asynccontextmanager
     async def lifespan(app):
         stop = threading.Event()
+        if sync_in_background and store.repo is not None:
+            try:
+                store.sync()
+            except Exception as e:
+                store.last_pull = (False, str(e))
         if sync_in_background and config.pull_minutes > 0:
             def loop():
                 while not stop.wait(config.pull_minutes * 60):

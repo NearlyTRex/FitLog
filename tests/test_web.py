@@ -170,3 +170,91 @@ def test_exercise_choices_keep_unshown_exclusions(client, csrf, app_db):
     tracker.set_excluded(app_db, {"gone-from-catalog"})
     client.post("/settings/exercises", data={"csrf": csrf, "shown": ["s0", "s1"], "include": ["s1"]})
     assert tracker.get_excluded(app_db) == {"gone-from-catalog", "s0"}
+
+
+def test_fmt_filter():
+    from fitlog.web import _fmt
+    assert (_fmt(None), _fmt(5.0), _fmt(5.25)) == ("", "5", "5.2")
+
+
+def test_static_files_are_cacheable(client):
+    response = client.get("/static/style.css")
+    assert response.status_code == 200 and "cache-control" not in response.headers
+
+
+def test_day_pages(client, csrf, app_db, store):
+    from datetime import date
+    from fitlog import tracker
+    tracker.add_custom(app_db, date(2026, 1, 1), "Old soup", 321, "lunch")
+    past = client.get("/day/2026-01-01").text
+    assert "Old soup" in past and "No workout was planned this day." in past
+    assert "Today" in client.get("/day/not-a-date").text
+    assert "Today" in client.get("/day/2999-01-01").text
+
+
+def test_search_without_terms_lists_everything(client, csrf):
+    results = client.get("/foods/search").text
+    assert "Banana" in results and "Toast" in results
+
+
+def test_food_errors_and_delete(client, csrf, app_db):
+    headers = {"X-CSRF-Token": csrf, "HX-Request": "true"}
+    day = re.search(r'name="day" value="([\d-]+)"', client.get("/").text).group(1)
+    response = client.post("/food/add", data={"day": day, "food_id": "nope", "meal": "lunch"}, headers=headers)
+    assert "Unknown food" in response.text
+    client.post("/food/custom", data={"day": day, "name": "Chips", "calories": 150, "meal": "snack"}, headers=headers)
+    with app_db.connect() as conn:
+        entry_id = conn.execute("SELECT id FROM food_log WHERE name = 'Chips'").fetchone()[0]
+    response = client.post(f"/food/{entry_id}/delete", data={"day": day}, headers=headers)
+    assert "Chips" not in response.text
+
+
+def test_swap(client, csrf):
+    headers = {"X-CSRF-Token": csrf, "HX-Request": "true"}
+    page = client.get("/").text
+    day = re.search(r'name="day" value="([\d-]+)"', page).group(1)
+    response = client.post("/plan/0/reroll", data={"day": day}, headers=headers)
+    assert response.status_code == 200 and 'class="error"' not in response.text
+    response = client.post("/plan/99/reroll", data={"day": day}, headers=headers)
+    assert "No such exercise in the plan" in response.text
+
+
+def test_history_and_catalog_pages(client, csrf):
+    history = client.get("/history").text
+    assert "Last 30 days" in history and history.count("<tr>") >= 30
+    catalog = client.get("/catalog").text
+    assert "Banana" in catalog and "Strength 0" in catalog
+
+
+def test_trusted_proxy_ip_keys_the_lockout(config, app_db, store, secret):
+    config.trust_proxy = True
+    with TestClient(create_app(config, app_db, store, sync_in_background=False)) as client:
+        for _ in range(auth.MAX_FAILURES_PER_IP):
+            client.post("/login", data={"username": "me", "password": "nope nope nope", "code": "000000"},
+                        headers={"X-Real-IP": "203.0.113.9"})
+        blocked = client.post("/login", data={"username": "me", "password": PASSWORD, "code": "000000"},
+                              headers={"X-Real-IP": "203.0.113.9"})
+        assert blocked.status_code == 429
+        other = client.post("/login", data={"username": "me", "password": PASSWORD,
+                                            "code": pyotp.TOTP(secret).now()},
+                            headers={"X-Real-IP": "198.51.100.4"}, follow_redirects=False)
+        assert other.status_code == 303
+
+
+def test_background_sync(config, app_db, store, monkeypatch):
+    import threading
+    config.pull_minutes = 0.001
+    store.repo = config.catalog_dir
+    calls = []
+    looped = threading.Event()
+
+    def sync():
+        calls.append(1)
+        if len(calls) >= 2:
+            looped.set()
+        raise RuntimeError("sync failed")
+
+    monkeypatch.setattr(store, "sync", sync)
+    with TestClient(create_app(config, app_db, store)):
+        assert looped.wait(5)
+    assert store.last_pull == (False, "sync failed")

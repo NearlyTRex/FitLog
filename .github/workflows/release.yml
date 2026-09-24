@@ -1,53 +1,25 @@
 name: release
 
-# Tags and publishes whatever version pyproject.toml holds, once. Pushes that
-# don't change the version find the tag already there and do nothing.
+# Tags and publishes the version in pyproject.toml once, after the checks pass.
+# Pushes that don't change the version find the tag already there and do nothing.
 on:
   push:
     branches: [main]
 
-permissions:
-  contents: write
-
-concurrency: release
+permissions: {}
 
 jobs:
-  version:
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.read.outputs.version }}
-      exists: ${{ steps.tag.outputs.exists }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Read version
-        id: read
-        run: echo "version=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')" >> "$GITHUB_OUTPUT"
-      - name: Check for tag
-        id: tag
-        env:
-          VERSION: ${{ steps.read.outputs.version }}
-        run: |
-          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
-
   check:
-    needs: version
-    if: needs.version.outputs.exists == 'false'
-    uses: ./.github/workflows/check.yml
+    uses: NearlyTRex/Workflows/.github/workflows/python-ci.yml@9ae8672e35efbf74b2c8dfe70e959ae775fb1e07 # 9ae8672
+    permissions:
+      contents: read
+    with:
+      commands: fitlog check data
 
   release:
-    needs: [version, check]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Tag and publish
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.version.outputs.version }}
-          REPO: ${{ github.repository }}
-          SHA: ${{ github.sha }}
-        run: |
-          gh release create "v$VERSION" --repo "$REPO" --target "$SHA" \
-            --title "FitLog $VERSION" --generate-notes
+    needs: check
+    uses: NearlyTRex/Workflows/.github/workflows/release.yml@9ae8672e35efbf74b2c8dfe70e959ae775fb1e07 # 9ae8672
+    permissions:
+      contents: write
+    with:
+      version-file: pyproject.toml

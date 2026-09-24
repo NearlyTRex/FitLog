@@ -3,6 +3,8 @@ import getpass
 import io
 import sys
 
+import qrcode
+
 from . import auth
 from .catalog import load_catalog
 from .config import Config
@@ -19,15 +21,11 @@ def _read_password():
 def _show_totp(username, secret):
     uri = auth.provisioning_uri(username, secret)
     print("\nScan this with your authenticator app:\n")
-    try:
-        import qrcode
-        qr = qrcode.QRCode(border=2)
-        qr.add_data(uri)
-        out = io.StringIO()
-        qr.print_ascii(out=out, invert=True)
-        print(out.getvalue())
-    except ImportError:
-        pass
+    qr = qrcode.QRCode(border=2)
+    qr.add_data(uri)
+    out = io.StringIO()
+    qr.print_ascii(out=out, invert=True)
+    print(out.getvalue())
     print(f"Or enter this key manually: {secret}")
     print(f"URI: {uri}\n")
 
@@ -41,7 +39,7 @@ def cmd_user(args, config):
     elif args.action == "reset-password":
         auth.set_password(db, args.username, _read_password())
         print("Password changed; existing sessions were signed out.")
-    elif args.action == "reset-totp":
+    else:
         secret = auth.reset_totp(db, args.username)
         print("Authenticator reset; existing sessions were signed out.")
         _show_totp(args.username, secret)
@@ -87,7 +85,3 @@ def main(argv=None):
     except auth.AuthError as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())
