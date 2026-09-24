@@ -1,6 +1,6 @@
 [project]
 name = "fitlog"
-version = "0.2.0"
+version = "0.2.1"
 description = "Personal food and exercise tracker driven by a git catalog"
 requires-python = ">=3.11"
 dynamic = ["dependencies"]
