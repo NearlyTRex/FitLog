@@ -1,6 +1,7 @@
 # FitLog
 
-Fitness and food tracking website, for one person. No social features, no photos, no accounts beyond your own.
+Fitness and food tracking website, for one person. No social features, no photos, no accounts
+beyond your own.
 
 - **Food:** log what you eat against a daily calorie target. Protein, carbs and fat are tracked
   when the catalog has them. Quick-add covers anything that is not in the catalog.

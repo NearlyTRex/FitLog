@@ -1,0 +1,5 @@
+# Prose is wrapped at 100 columns. Tables and commands can't wrap, so they're exempt.
+[MD013]
+line-length = 100
+code-blocks = false
+tables = false
