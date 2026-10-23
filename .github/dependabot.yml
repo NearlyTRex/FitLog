@@ -36,3 +36,14 @@ updates:
     groups:
       docker:
         patterns: ["*"]
+
+  - package-ecosystem: docker-compose
+    directories: ["/"]
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    assignees: ["NearlyTRex"]
+    groups:
+      docker-compose:
+        patterns: ["*"]
