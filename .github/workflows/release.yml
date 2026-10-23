@@ -1,7 +1,8 @@
 name: Release
 
 # Tags and publishes the version in pyproject.toml once, after the checks pass.
-# Pushes that don't change the version find the tag already there and do nothing.
+# Pushes that don't change the version find the tag already there, and run
+# nothing else: CI has already tested them.
 on:
   push:
     branches: [main]
@@ -9,9 +10,19 @@ on:
 permissions: {}
 
 jobs:
+  pending:
+    name: Pending
+    uses: NearlyTRex/Workflows/.github/workflows/release-check.yml@9e1d569f0f334c38fc2f24cc45a9428b86afb623 # v0.2.20
+    permissions:
+      contents: read
+    with:
+      version-file: pyproject.toml
+
   check:
     name: Check
-    uses: NearlyTRex/Workflows/.github/workflows/python-ci.yml@4fe68c91984dd09dea6988fd603b128bc3f44ff7 # v0.2.9
+    needs: pending
+    if: needs.pending.outputs.pending == 'true'
+    uses: NearlyTRex/Workflows/.github/workflows/python-ci.yml@9e1d569f0f334c38fc2f24cc45a9428b86afb623 # v0.2.20
     permissions:
       contents: read
     with:
@@ -20,7 +31,7 @@ jobs:
   release:
     name: Release
     needs: check
-    uses: NearlyTRex/Workflows/.github/workflows/release.yml@4fe68c91984dd09dea6988fd603b128bc3f44ff7 # v0.2.9
+    uses: NearlyTRex/Workflows/.github/workflows/release.yml@9e1d569f0f334c38fc2f24cc45a9428b86afb623 # v0.2.20
     permissions:
       contents: write
     with:
